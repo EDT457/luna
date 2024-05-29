@@ -52,7 +52,9 @@ function create() {
     graphics.destroy(); 
 
     const platforms = this.physics.add.staticGroup();
-    platforms.create(400, 568, 'platform').refreshBody();
+    platforms.create(500, 700, 'platform').refreshBody();
+    platforms.create(300, 560, 'platform').refreshBody();
+    platforms.create(400, 400, 'platform').refreshBody();
 
     player = this.physics.add.sprite(400, 400, 'walk0');
     player.setBounce(0.2);
@@ -128,7 +130,8 @@ function spawnEnemy() {
     const side = Phaser.Math.Between(0, 1); // Randomly choose 0 (left) or 1 (right)
     const x = side === 0 ? 0 : 800; // Spawn at left or right side
     const y = Phaser.Math.Between(0, 600); // Random y position
-    const enemy = this.add.circle(x, y, 20, 0xff0000); // Create a red circle
+    const color = Phaser.Math.Between(0, 1) === 0 ? 0xff0000 : 0x0000ff; // Randomly choose red or blue color
+    const enemy = this.add.circle(x, y, 20, color); // Create a red circle
     this.physics.add.existing(enemy);
     enemy.body.setCircle(20);
     enemy.body.setBounce(1);
@@ -201,7 +204,14 @@ function update(time) {
 
     // Update enemies to move towards the player
     enemies.children.iterate(function (enemy) {
-        this.physics.moveToObject(enemy, player, 100);
+        if (enemy.fillColor === 0xff0000) { // Red enemies move towards the player
+            this.physics.moveToObject(enemy, player, 100);
+        } else if (enemy.fillColor === 0x0000ff) { // Blue enemies move in a random direction
+            if (!enemy.randomMovement) {
+                enemy.body.setVelocity(Phaser.Math.Between(-100, 100), Phaser.Math.Between(-100, 100));
+                enemy.randomMovement = true;
+            }
+        }
     }, this);
 
     // Check for collisions between slash and enemies
