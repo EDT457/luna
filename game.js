@@ -23,6 +23,9 @@ let cursors;
 let keyA, keyD, keyW, keySpace;
 let slash;
 let playerDirection = 'right'; // Variable to track player direction
+let enemies;
+let lastEnemyTime = 0;
+let enemySpawnInterval = 2000; // 2 seconds
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
@@ -85,6 +88,11 @@ function create() {
     slash = this.add.graphics();
     drawSlash();
     slash.setVisible(false);
+
+    // Create enemies group
+    enemies = this.physics.add.group();
+    this.physics.add.collider(enemies, platforms);
+    this.physics.add.collider(enemies, player, hitPlayer, null, this);
 }
 
 function drawSlash() {
@@ -97,7 +105,23 @@ function drawSlash() {
     slash.fillPath();
 }
 
-function update() {
+function spawnEnemy() {
+    console.log('Spawning enemy'); // Debug: log spawning
+    const side = Phaser.Math.Between(0, 1); // Randomly choose 0 (left) or 1 (right)
+    const x = side === 0 ? 0 : 800; // Spawn at left or right side
+    const y = Phaser.Math.Between(0, 600); // Random y position
+    const enemy = this.add.circle(x, y, 20, 0xff0000); // Create a red circle
+    this.physics.add.existing(enemy);
+    enemy.body.setCircle(20);
+    enemy.body.setBounce(1);
+    enemy.body.setCollideWorldBounds(true);
+    enemy.body.setVelocityX(side === 0 ? 100 : -100); // Move towards the player
+    enemy.body.setVelocityY(Phaser.Math.Between(-50, 50)); // Random vertical velocity
+    enemies.add(enemy);
+    console.log('Enemy created at:', x, y); // Debug: log enemy position
+}
+
+function update(time) {
     if (cursors.left.isDown || keyA.isDown) {
         player.setVelocityX(-160);
         player.anims.play('left', true);
@@ -127,7 +151,7 @@ function update() {
             targetX += 100; // Slash to the right
             slash.scaleX = 1; // Ensure normal scale for right direction
         } else if (playerDirection === 'left') {
-            targetX -= 100; // Slash to the left            slash.scaleX = 1; // Ensure normal scale for right direction
+            targetX -= 100; // Slash to the left
             slash.scaleX = -1; // Flip horizontally for left direction
         }
 
@@ -143,4 +167,22 @@ function update() {
             }
         });
     }
+
+    // Spawn enemies at intervals
+    if (time > lastEnemyTime + enemySpawnInterval) {
+        spawnEnemy.call(this); // Ensure the correct context for `this`
+        lastEnemyTime = time;
+    }
+
+    // Update enemies to move towards the player
+    enemies.children.iterate(function (enemy) {
+        this.physics.moveToObject(enemy, player, 100);
+    }, this);
+}
+
+function hitPlayer(player, enemy) {
+    // Handle player being hit by an enemy
+    // For now, just destroy the enemy
+    console.log('Player hit by enemy'); // Debug: log collision
+    enemy.destroy();
 }
