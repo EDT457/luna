@@ -26,6 +26,8 @@ let playerDirection = 'right'; // Variable to track player direction
 let enemies;
 let lastEnemyTime = 0;
 let enemySpawnInterval = 2000; // 2 seconds
+let health = 10;
+let credits = 0;
 let hearts = [];
 let points = 0;
 let pointsText;
@@ -190,6 +192,8 @@ function hitPlayer(player, enemy) {
     // For now, just destroy the enemy
     console.log('Player hit by enemy'); // Debug: log collision
     enemy.destroy();
+    health--;
+    removeHeart();
 }
 
 function createHearts() {
