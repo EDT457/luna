@@ -99,6 +99,9 @@ function create() {
     enemies = this.physics.add.group();
     this.physics.add.collider(enemies, platforms);
     this.physics.add.collider(enemies, player, hitPlayer, null, this);
+
+    // Create hearts
+    createHearts.call(this);
 }
 
 function drawSlash() {
@@ -191,4 +194,24 @@ function hitPlayer(player, enemy) {
     // For now, just destroy the enemy
     console.log('Player hit by enemy'); // Debug: log collision
     enemy.destroy();
+}
+
+function createHearts() {
+    const heartCount = 10; // Set the number of hearts
+    for (let i = 0; i < heartCount; i++) {
+        const heart = this.add.image(50 + i * 50, 50, 'heart');
+        heart.setScale(1);
+        hearts.push(heart);
+    }
+}
+
+function removeHeart() {
+    if (hearts.length > 0) {
+        const heart = hearts.pop(); // Remove the last heart from the array
+        heart.destroy(); // Destroy the heart image
+        if (hearts.length === 0) {
+            // Game over logic here
+            console.log('Game Over');
+        }
+    }
 }
