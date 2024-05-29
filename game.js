@@ -31,6 +31,8 @@ let credits = 0;
 let hearts = [];
 let points = 0;
 let pointsText;
+let lastSlashTime = 0; // To track slash cooldown
+const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
@@ -98,6 +100,11 @@ function create() {
     this.physics.add.collider(enemies, platforms);
     this.physics.add.collider(enemies, player, hitPlayer, null, this);
 
+    // Enable physics on the slash for collision detection
+    this.physics.add.existing(slash);
+    slash.body.setCircle(60); // Increase the collision radius
+    slash.body.setEnable(false); // Initially disable collision detection for the slash
+
     // Create hearts
     createHearts.call(this);
 }
@@ -106,8 +113,8 @@ function drawSlash() {
     slash.clear();
     slash.fillStyle(0x808080, 1);
     slash.beginPath();
-    slash.arc(0, 0, 50, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(450), false);
-    slash.arc(0, 0, 40, Phaser.Math.DegToRad(450), Phaser.Math.DegToRad(270), true);
+    slash.arc(0, 0, 60, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(450), false); // Increase the radius
+    slash.arc(0, 0, 50, Phaser.Math.DegToRad(450), Phaser.Math.DegToRad(270), true);
     slash.closePath();
     slash.fillPath();
 }
@@ -134,21 +141,22 @@ function update(time) {
         player.anims.play('left', true);
         player.flipX = true;
         playerDirection = 'left'; // Update direction
-        } else if (cursors.right.isDown || keyD.isDown) {
-            player.setVelocityX(160);
-            player.anims.play('right', true);
-            player.flipX = false;
-            playerDirection = 'right'; // Update direction
-        } else {
-            player.setVelocityX(0);
-            player.anims.play('turn');
+    } else if (cursors.right.isDown || keyD.isDown) {
+        player.setVelocityX(160);
+        player.anims.play('right', true);
+        player.flipX = false;
+        playerDirection = 'right'; // Update direction
+    } else {
+        player.setVelocityX(0);
+        player.anims.play('turn');
     }
 
     if ((cursors.up.isDown || keyW.isDown) && player.body.touching.down) {
         player.setVelocityY(-330);
     }
 
-    if (keySpace.isDown) {
+    // Check for slash and cooldown
+    if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
         slash.setVisible(true);
         slash.setPosition(player.x, player.y);
         slash.setScale(1); // Adjust the scale as needed
@@ -162,6 +170,9 @@ function update(time) {
             slash.scaleX = -1; // Flip horizontally for left direction
         }
 
+        // Enable collision detection for the slash
+        slash.body.setEnable(true);
+
         // Animate the slash to glide like a real slash
         this.tweens.add({
             targets: slash,
@@ -171,6 +182,8 @@ function update(time) {
             onComplete: () => {
                 slash.setVisible(false);
                 slash.alpha = 1; // Reset alpha for next use
+                slash.body.setEnable(false); // Disable collision detection for the slash
+                lastSlashTime = time; // Update last slash time
             }
         });
     }
@@ -185,6 +198,9 @@ function update(time) {
     enemies.children.iterate(function (enemy) {
         this.physics.moveToObject(enemy, player, 100);
     }, this);
+
+    // Check for collisions between slash and enemies
+    this.physics.overlap(slash, enemies, destroyEnemy, null, this);
 }
 
 function hitPlayer(player, enemy) {
@@ -194,6 +210,10 @@ function hitPlayer(player, enemy) {
     enemy.destroy();
     health--;
     removeHeart();
+}
+
+function destroyEnemy(slash, enemy) {
+    enemy.destroy(); // Destroy the enemy
 }
 
 function createHearts() {
