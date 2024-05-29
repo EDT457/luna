@@ -29,10 +29,6 @@ let enemySpawnInterval = 2000; // 2 seconds
 let hearts = [];
 let points = 0;
 let pointsText;
-let shopButton;
-let shopMenu;
-let shopOpen = false; // Variable to track shop menu state
-
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
@@ -197,10 +193,9 @@ function hitPlayer(player, enemy) {
 }
 
 function createHearts() {
-    const heartCount = 10; // Set the number of hearts
-    for (let i = 0; i < heartCount; i++) {
-        const heart = this.add.image(50 + i * 50, 50, 'heart');
-        heart.setScale(1);
+    for (let i = 0; i < 10; i++) {
+        let heart = this.add.image(30 + i * 40, 30, 'heart');
+        heart.setScale(2);
         hearts.push(heart);
     }
 }
