@@ -2,6 +2,7 @@ const config = {
     type: Phaser.AUTO,
     width: 800,
     height: 800,
+    pixelArt: true,
     physics: {
         default: 'arcade',
         arcade: {
@@ -13,24 +14,31 @@ const config = {
         preload: preload,
         create: create,
         update: update
-    },
-    pixelArt: true
+    }
 };
 
 const game = new Phaser.Game(config);
 let player;
 let cursors;
-let keyA, keyD, keyW, keySpace;
+let keyA, keyD, keySpace;
 let slash;
 let playerDirection = 'right'; // Variable to track player direction
 let enemies;
 let lastEnemyTime = 0;
 let enemySpawnInterval = 2000; // 2 seconds
+let hearts = [];
+let points = 0;
+let pointsText;
+let shopButton;
+let shopMenu;
+let shopOpen = false; // Variable to track shop menu state
+
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
     this.load.image('walk1', 'assets/walk1.png');
     this.load.image('walk2', 'assets/walk2.png');
+    this.load.image('heart', 'assets/Heart.png'); // Preload the heart image
 }
 
 function create() {
@@ -40,19 +48,17 @@ function create() {
     graphics.fillStyle(0x00FF00, 1);
     graphics.generateTexture('platform', 400, 32);
     graphics.destroy(); 
+
     const platforms = this.physics.add.staticGroup();
     platforms.create(400, 568, 'platform').refreshBody();
 
     player = this.physics.add.sprite(400, 400, 'walk0');
-    player.setTexture('walk0', null, { scaleMode: Phaser.ScaleModes.NEAREST });
     player.setBounce(0.2);
     player.setCollideWorldBounds(true);
     player.setScale(3); 
 
-    // collider
     this.physics.add.collider(player, platforms);
 
-    // animations
     this.anims.create({
         key: 'left',
         frames: [
@@ -127,14 +133,14 @@ function update(time) {
         player.anims.play('left', true);
         player.flipX = true;
         playerDirection = 'left'; // Update direction
-    } else if (cursors.right.isDown || keyD.isDown) {
-        player.setVelocityX(160);
-        player.anims.play('right', true);
-        player.flipX = false;
-        playerDirection = 'right'; // Update direction
-    } else {
-        player.setVelocityX(0);
-        player.anims.play('turn');
+        } else if (cursors.right.isDown || keyD.isDown) {
+            player.setVelocityX(160);
+            player.anims.play('right', true);
+            player.flipX = false;
+            playerDirection = 'right'; // Update direction
+        } else {
+            player.setVelocityX(0);
+            player.anims.play('turn');
     }
 
     if ((cursors.up.isDown || keyW.isDown) && player.body.touching.down) {
