@@ -20,7 +20,9 @@ const config = {
 const game = new Phaser.Game(config);
 let player;
 let cursors;
-let keyA, keyD, keySpace;
+let keyA, keyD, keyW, keySpace;
+let slash;
+let playerDirection = 'right'; // Variable to track player direction
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
@@ -100,10 +102,12 @@ function update() {
         player.setVelocityX(-160);
         player.anims.play('left', true);
         player.flipX = true;
+        playerDirection = 'left'; // Update direction
     } else if (cursors.right.isDown || keyD.isDown) {
         player.setVelocityX(160);
         player.anims.play('right', true);
         player.flipX = false;
+        playerDirection = 'right'; // Update direction
     } else {
         player.setVelocityX(0);
         player.anims.play('turn');
@@ -116,12 +120,21 @@ function update() {
     if (keySpace.isDown) {
         slash.setVisible(true);
         slash.setPosition(player.x, player.y);
-        slash.setScale(2); // Adjust the scale as needed
+        slash.setScale(1); // Adjust the scale as needed
+
+        let targetX = player.x;
+        if (playerDirection === 'right') {
+            targetX += 100; // Slash to the right
+            slash.scaleX = 1; // Ensure normal scale for right direction
+        } else if (playerDirection === 'left') {
+            targetX -= 100; // Slash to the left            slash.scaleX = 1; // Ensure normal scale for right direction
+            slash.scaleX = -1; // Flip horizontally for left direction
+        }
 
         // Animate the slash to glide like a real slash
         this.tweens.add({
             targets: slash,
-            x: player.x + 100, // Adjust the distance as needed
+            x: targetX, // Adjust the distance as needed
             alpha: 0,
             duration: 200, // Duration of the animation
             onComplete: () => {
