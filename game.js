@@ -33,11 +33,13 @@ let points = 0;
 let pointsText;
 let lastSlashTime = 0; // To track slash cooldown
 const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
+let gameOver = false;
 
 function preload() {
     this.load.image('walk0', 'assets/walk0.png');
     this.load.image('walk1', 'assets/walk1.png');
     this.load.image('walk2', 'assets/walk2.png');
+    this.load.image('dead', 'assets/dead.png');
     this.load.image('heart', 'assets/Heart.png'); // Preload the heart image
 }
 
@@ -107,6 +109,8 @@ function create() {
 
     // Create hearts
     createHearts.call(this);
+
+    // Add collider for slash and enemies
 }
 
 function drawSlash() {
@@ -136,6 +140,7 @@ function spawnEnemy() {
 }
 
 function update(time) {
+    if (gameOver) return; // Stop updating if game is over
     if (cursors.left.isDown || keyA.isDown) {
         player.setVelocityX(-160);
         player.anims.play('left', true);
@@ -226,11 +231,12 @@ function createHearts() {
 
 function removeHeart() {
     if (hearts.length > 0) {
-        const heart = hearts.pop(); // Remove the last heart from the array
-        heart.destroy(); // Destroy the heart image
+        const heart = hearts.pop();
+        heart.destroy();
         if (hearts.length === 0) {
-            // Game over logic here
-            console.log('Game Over');
+            player.setTexture('dead');
+            player.setVelocity(0);
+            gameOver = true;
         }
     }
 }
