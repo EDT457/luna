@@ -40,7 +40,8 @@ function preload() {
     this.load.image('walk1', 'assets/walk1.png');
     this.load.image('walk2', 'assets/walk2.png');
     this.load.image('dead', 'assets/dead.png');
-    this.load.image('heart', 'assets/Heart.png'); // Preload the heart image
+    this.load.image('heart', 'assets/Heart.png');
+    this.load.audio('backgroundMusic', 'assets/background.mp3');
 }
 
 function create() {
@@ -112,7 +113,8 @@ function create() {
     // Create hearts
     createHearts.call(this);
 
-    // Add collider for slash and enemies
+    backgroundMusic = this.sound.add('backgroundMusic', { loop: true });
+    backgroundMusic.play();
 }
 
 function drawSlash() {
@@ -167,14 +169,14 @@ function update(time) {
     if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
         slash.setVisible(true);
         slash.setPosition(player.x, player.y);
-        slash.setScale(1); // Adjust the scale as needed
+        slash.setScale(1.5); // Adjust the scale as needed
 
         let targetX = player.x;
         if (playerDirection === 'right') {
-            targetX += 100; // Slash to the right
+            targetX += 50; // Slash to the right
             slash.scaleX = 1; // Ensure normal scale for right direction
         } else if (playerDirection === 'left') {
-            targetX -= 100; // Slash to the left
+            targetX -= 50; // Slash to the left
             slash.scaleX = -1; // Flip horizontally for left direction
         }
 
@@ -220,7 +222,6 @@ function update(time) {
 
 function hitPlayer(player, enemy) {
     // Handle player being hit by an enemy
-    // For now, just destroy the enemy
     console.log('Player hit by enemy'); // Debug: log collision
     enemy.destroy();
     health--;
