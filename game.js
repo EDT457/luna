@@ -169,14 +169,14 @@ function update(time) {
     if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
         slash.setVisible(true);
         slash.setPosition(player.x, player.y);
-        slash.setScale(1.5); // Adjust the scale as needed
+        slash.setScale(1); // Adjust the scale as needed
 
         let targetX = player.x;
         if (playerDirection === 'right') {
-            targetX += 50; // Slash to the right
+            targetX += 100; // Slash to the right
             slash.scaleX = 1; // Ensure normal scale for right direction
         } else if (playerDirection === 'left') {
-            targetX -= 50; // Slash to the left
+            targetX -= 100; // Slash to the left
             slash.scaleX = -1; // Flip horizontally for left direction
         }
 
