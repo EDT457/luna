@@ -113,6 +113,8 @@ function create() {
     // Create hearts
     createHearts.call(this);
 
+    pointsText = this.add.text(10, 50, 'Points: 0', { fontSize: '32px', fill: '#fff' });
+
     backgroundMusic = this.sound.add('backgroundMusic', { loop: true });
     backgroundMusic.play();
 }
@@ -229,7 +231,9 @@ function hitPlayer(player, enemy) {
 }
 
 function destroyEnemy(slash, enemy) {
-    enemy.destroy(); // Destroy the enemy
+    enemy.destroy();
+    points += 10; // Increment points by 10
+    pointsText.setText('Points: ' + points); // Update points text // Destroy the enemy
 }
 
 function createHearts() {
