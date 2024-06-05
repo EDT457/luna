@@ -1,33 +1,13 @@
-const config = {
-    type: Phaser.AUTO,
-    width: 800,
-    height: 800,
-    pixelArt: true,
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 300 },
-            debug: false
-        }
-    },
-    scene: {
-        preload: preload,
-        create: create,
-        update: update
-    }
-};
-
-const game = new Phaser.Game(config);
 let player;
+let backgroundMusic;
 let cursors;
-let keyA, keyD, keySpace;
+let keyA, keyD, keyW, keySpace;
 let slash;
 let playerDirection = 'right'; // Variable to track player direction
 let enemies;
 let lastEnemyTime = 0;
 let enemySpawnInterval = 2000; // 2 seconds
 let health = 10;
-let credits = 0;
 let hearts = [];
 let points = 0;
 let pointsText;
@@ -35,7 +15,44 @@ let lastSlashTime = 0; // To track slash cooldown
 const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
 let gameOver = false;
 
-function preload() {
+class MenuScene extends Phaser.Scene {
+constructor() {
+    super({ key: 'MenuScene' });
+}
+
+create() {
+    const title = this.add.text(400, 200, 'Menu Scene', {
+        fontSize: '48px',
+        fill: '#fff'
+    });
+    title.setOrigin(0.5);
+
+    const startButton = this.add.text(400, 300, 'Start Game', {
+        fontSize: '32px',
+        fill: '#fff'
+    }).setInteractive();
+    startButton.setOrigin(0.5);
+
+    startButton.on('pointerdown', () => {
+        this.scene.start('GameScene');
+    });
+
+    startButton.on('pointerover', () => {
+        startButton.setStyle({ fill: '#ff0' });
+    });
+
+    startButton.on('pointerout', () => {
+        startButton.setStyle({ fill: '#fff' });
+    });
+}
+}
+
+class GameScene extends Phaser.Scene {
+constructor() {
+    super({ key: 'GameScene' });
+}
+
+preload() {
     this.load.image('walk0', 'assets/walk0.png');
     this.load.image('walk1', 'assets/walk1.png');
     this.load.image('walk2', 'assets/walk2.png');
@@ -44,7 +61,7 @@ function preload() {
     this.load.audio('backgroundMusic', 'assets/background.mp3');
 }
 
-function create() {
+create() {
     const graphics = this.add.graphics();
     graphics.fillStyle(0x8B4513, 1);
     graphics.fillRect(0, 0, 500, 32);
@@ -53,8 +70,8 @@ function create() {
     graphics.destroy(); 
 
     const platforms = this.physics.add.staticGroup();
-    platforms.create(500, 700, 'platform').refreshBody();
-    platforms.create(300, 560, 'platform').refreshBody();
+    platforms.create(600, 700, 'platform').refreshBody();
+    platforms.create(100, 560, 'platform').refreshBody();
     platforms.create(400, 400, 'platform').refreshBody();
 
     player = this.physics.add.sprite(400, 400, 'walk0');
@@ -97,13 +114,13 @@ function create() {
     keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     slash = this.add.graphics();
-    drawSlash();
+    this.drawSlash();
     slash.setVisible(false);
 
     // Create enemies group
     enemies = this.physics.add.group();
     this.physics.add.collider(enemies, platforms);
-    this.physics.add.collider(enemies, player, hitPlayer, null, this);
+    this.physics.add.collider(enemies, player, this.hitPlayer, null, this);
 
     // Enable physics on the slash for collision detection
     this.physics.add.existing(slash);
@@ -111,7 +128,7 @@ function create() {
     slash.body.setEnable(false); // Initially disable collision detection for the slash
 
     // Create hearts
-    createHearts.call(this);
+    this.createHearts();
 
     pointsText = this.add.text(10, 50, 'Points: 0', { fontSize: '32px', fill: '#fff' });
 
@@ -119,34 +136,7 @@ function create() {
     backgroundMusic.play();
 }
 
-function drawSlash() {
-    slash.clear();
-    slash.fillStyle(0x808080, 1);
-    slash.beginPath();
-    slash.arc(0, 0, 60, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(450), false); // Increase the radius
-    slash.arc(0, 0, 50, Phaser.Math.DegToRad(450), Phaser.Math.DegToRad(270), true);
-    slash.closePath();
-    slash.fillPath();
-}
-
-function spawnEnemy() {
-    console.log('Spawning enemy'); // Debug: log spawning
-    const side = Phaser.Math.Between(0, 1); // Randomly choose 0 (left) or 1 (right)
-    const x = side === 0 ? 0 : 800; // Spawn at left or right side
-    const y = Phaser.Math.Between(0, 600); // Random y position
-    const color = Phaser.Math.Between(0, 1) === 0 ? 0xff0000 : 0x0000ff; // Randomly choose red or blue color
-    const enemy = this.add.circle(x, y, 20, color); // Create a red circle
-    this.physics.add.existing(enemy);
-    enemy.body.setCircle(20);
-    enemy.body.setBounce(1);
-    enemy.body.setCollideWorldBounds(true);
-    enemy.body.setVelocityX(side === 0 ? 100 : -100); // Move towards the player
-    enemy.body.setVelocityY(Phaser.Math.Between(-50, 50)); // Random vertical velocity
-    enemies.add(enemy);
-    console.log('Enemy created at:', x, y); // Debug: log enemy position
-}
-
-function update(time) {
+update(time) {
     if (gameOver) return; // Stop updating if game is over
     if (cursors.left.isDown || keyA.isDown) {
         player.setVelocityX(-160);
@@ -202,7 +192,7 @@ function update(time) {
 
     // Spawn enemies at intervals
     if (time > lastEnemyTime + enemySpawnInterval) {
-        spawnEnemy.call(this); // Ensure the correct context for `this`
+        this.spawnEnemy(); // Ensure the correct context for `this`
         lastEnemyTime = time;
     }
 
@@ -219,24 +209,51 @@ function update(time) {
     }, this);
 
     // Check for collisions between slash and enemies
-    this.physics.overlap(slash, enemies, destroyEnemy, null, this);
+    this.physics.overlap(slash, enemies, this.destroyEnemy, null, this);
 }
 
-function hitPlayer(player, enemy) {
+drawSlash() {
+    slash.clear();
+    slash.fillStyle(0x808080, 1);
+    slash.beginPath();
+    slash.arc(0, 0, 60, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(450), false); // Increase the radius
+    slash.arc(0, 0, 50, Phaser.Math.DegToRad(450), Phaser.Math.DegToRad(270), true);
+    slash.closePath();
+    slash.fillPath();
+}
+
+spawnEnemy() {
+    console.log('Spawning enemy'); // Debug: log spawning
+    const side = Phaser.Math.Between(0, 1); // Randomly choose 0 (left) or 1 (right)
+    const x = side === 0 ? 0 : 800; // Spawn at left or right side
+    const y = Phaser.Math.Between(0, 600); // Random y position
+    const color = Phaser.Math.Between(0, 1) === 0 ? 0xff0000 : 0x0000ff; // Randomly choose red or blue color
+    const enemy = this.add.circle(x, y, 20, color); // Create a red circle
+    this.physics.add.existing(enemy);
+    enemy.body.setCircle(20);
+    enemy.body.setBounce(1);
+    enemy.body.setCollideWorldBounds(true);
+    enemy.body.setVelocityX(side === 0 ? 100 : -100); // Move towards the player
+    enemy.body.setVelocityY(Phaser.Math.Between(-50, 50)); // Random vertical velocity
+    enemies.add(enemy);
+    console.log('Enemy created at:', x, y); // Debug: log enemy position
+}
+
+hitPlayer(player, enemy) {
     // Handle player being hit by an enemy
     console.log('Player hit by enemy'); // Debug: log collision
     enemy.destroy();
     health--;
-    removeHeart();
+    this.removeHeart();
 }
 
-function destroyEnemy(slash, enemy) {
+destroyEnemy(slash, enemy) {
     enemy.destroy();
     points += 10; // Increment points by 10
     pointsText.setText('Points: ' + points); // Update points text // Destroy the enemy
 }
 
-function createHearts() {
+createHearts() {
     for (let i = 0; i < 10; i++) {
         let heart = this.add.image(30 + i * 40, 30, 'heart');
         heart.setScale(2);
@@ -244,7 +261,7 @@ function createHearts() {
     }
 }
 
-function removeHeart() {
+removeHeart() {
     if (hearts.length > 0) {
         const heart = hearts.pop();
         heart.destroy();
@@ -255,3 +272,21 @@ function removeHeart() {
         }
     }
 }
+}
+
+const config = {
+type: Phaser.AUTO,
+width: 800,
+height: 800,
+pixelArt: true,
+physics: {
+    default: 'arcade',
+    arcade: {
+        gravity: { y: 300 },
+        debug: false
+    }
+},
+scene: [MenuScene, GameScene]
+};
+
+const game = new Phaser.Game(config);
