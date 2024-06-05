@@ -16,35 +16,99 @@ const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
 let gameOver = false;
 
 class MenuScene extends Phaser.Scene {
-constructor() {
-    super({ key: 'MenuScene' });
+    constructor() {
+        super({ key: 'MenuScene' });
+    }
+
+    preload() {
+        this.load.image('menuBackground', 'assets/menu-b.png');
+    }
+
+    create() {
+        const bg = this.add.image(400, 300, 'menuBackground').setOrigin(0.5, 0.5);
+        bg.displayWidth = 800;
+        bg.displayHeight = 1000;
+
+        const title = this.add.text(400, 200, 'Luna the Fox', {
+            fontSize: '48px',
+            fill: '#fff'
+        });
+        title.setOrigin(0.5);
+
+        const startButton = this.add.text(400, 300, 'Start Game', {
+            fontSize: '32px',
+            fill: '#fff'
+        }).setInteractive();
+        startButton.setOrigin(0.5);
+
+        startButton.on('pointerdown', () => {
+            this.scene.start('GameScene');
+        });
+
+        startButton.on('pointerover', () => {
+            startButton.setStyle({ fill: '#ff0' });
+        });
+
+        startButton.on('pointerout', () => {
+            startButton.setStyle({ fill: '#fff' });
+        });
+
+        const creditsButton = this.add.text(400, 500, 'Credits', {
+            fontSize: '32px',
+            fill: '#fff'
+        }).setInteractive();
+        creditsButton.setOrigin(0.5);
+
+        creditsButton.on('pointerdown', () => {
+            this.scene.start('CreditsScene');
+        });
+
+        creditsButton.on('pointerover', () => {
+            creditsButton.setStyle({ fill: '#ff0' });
+        });
+
+        creditsButton.on('pointerout', () => {
+            creditsButton.setStyle({ fill: '#fff' });
+        });
+    }
+
 }
 
-create() {
-    const title = this.add.text(400, 200, 'Menu Scene', {
-        fontSize: '48px',
-        fill: '#fff'
-    });
-    title.setOrigin(0.5);
+class CreditsScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'CreditsScene' });
+    }
 
-    const startButton = this.add.text(400, 300, 'Start Game', {
-        fontSize: '32px',
-        fill: '#fff'
-    }).setInteractive();
-    startButton.setOrigin(0.5);
+    preload() {
+        this.load.image('menuBackground', 'assets/menu-b.png');
+    }
 
-    startButton.on('pointerdown', () => {
-        this.scene.start('GameScene');
-    });
+    create() {
+        const title = this.add.text(400, 200, 'Credits', {
+            fontSize: '48px',
+            fill: '#fff'
+        });
+        title.setOrigin(0.5);
 
-    startButton.on('pointerover', () => {
-        startButton.setStyle({ fill: '#ff0' });
-    });
+        const MenuButton = this.add.text(400, 300, 'Menu', {
+            fontSize: '32px',
+            fill: '#fff'
+        }).setInteractive();
+        MenuButton.setOrigin(0.5);
 
-    startButton.on('pointerout', () => {
-        startButton.setStyle({ fill: '#fff' });
-    });
-}
+        MenuButton.on('pointerdown', () => {
+            this.scene.start('MenuScene');
+        });
+
+        MenuButton.on('pointerover', () => {
+            MenuButton.setStyle({ fill: '#ff0' });
+        });
+
+        MenuButton.on('pointerout', () => {
+            MenuButton.setStyle({ fill: '#fff' });
+        });
+    }
+
 }
 
 class GameScene extends Phaser.Scene {
@@ -286,7 +350,7 @@ physics: {
         debug: false
     }
 },
-scene: [MenuScene, GameScene]
+scene: [MenuScene, GameScene, CreditsScene]
 };
 
 const game = new Phaser.Game(config);
