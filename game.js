@@ -123,10 +123,16 @@ class GameScene extends Phaser.Scene {
         this.load.image('dead', 'assets/dead.png');
         this.load.image('heart', 'assets/Heart.png');
         this.load.audio('backgroundMusic', 'assets/background.mp3');
+        this.load.image('shop', 'assets/shop.png');
+        this.load.image('gamebg', 'assets/gamebg.jpg');
         this.load.spritesheet('bat', 'assets/32x32-bat-sprite.png', { frameWidth: 32, frameHeight: 32 });
     }
 
     create() {
+        const backg = this.add.image(400, 300, 'gamebg').setOrigin(0.5, 0.5);
+        backg.displayWidth = 800;
+        backg.displayHeight = 1000;
+
         const graphics = this.add.graphics();
         graphics.fillStyle(0x8B4513, 1);
         graphics.fillRect(0, 0, 500, 32);
@@ -202,10 +208,17 @@ class GameScene extends Phaser.Scene {
         // Create hearts
         this.createHearts();
 
-        pointsText = this.add.text(10, 50, 'Points: 0', { fontSize: '32px', fill: '#fff' });
+        pointsText = this.add.text(10, 50, 'Points: 0', { fontSize: '32px', fill: '#000', fontStyle: 'bold' });
 
         backgroundMusic = this.sound.add('backgroundMusic', { loop: true });
         backgroundMusic.play();
+
+        const button = this.add.image(790, 10, 'shop').setInteractive().setScale(0.5).setOrigin(1, 0);
+        button.on('pointerdown', () => {
+            this.togglePopup();
+        });
+
+        this.createPopup();
     }
 
     update(time) {
@@ -335,6 +348,29 @@ class GameScene extends Phaser.Scene {
                 gameOver = true;
             }
         }
+    }
+
+    createPopup() {
+        this.popup = this.add.container(400, 300).setVisible(false);
+
+        const popupBg = this.add.graphics();
+        popupBg.fillStyle(0x000000, 0.8);
+        popupBg.fillRect(-100, -50, 200, 100);
+
+        const closeButton = this.add.text(0, 0, 'Close', {
+            fontSize: '20px',
+            fill: '#fff'
+        }).setInteractive();
+        closeButton.setOrigin(0.5);
+        closeButton.on('pointerdown', () => {
+            this.togglePopup();
+        });
+
+        this.popup.add([popupBg, closeButton]);
+    }
+
+    togglePopup() {
+        this.popup.setVisible(!this.popup.visible);
     }
 }
 
