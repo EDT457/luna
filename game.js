@@ -356,13 +356,13 @@ class GameScene extends Phaser.Scene {
     
         const closeButtonBg = this.add.graphics();
         closeButtonBg.fillStyle(0xff0000, 1); // Red background for close button
-        closeButtonBg.fillRect(-50, -60, 100, 40);
+        closeButtonBg.fillRect(-85, -60, 175, 40);
     
         const increaseSpeedButtonBg = this.add.graphics();
         increaseSpeedButtonBg.fillStyle(0x00ff00, 1); // Green background for increase speed button
         increaseSpeedButtonBg.fillRect(-125, 20, 250, 40);
     
-        const closeButton = this.add.text(0, -40, 'Close', {
+        const closeButton = this.add.text(0, -40, 'Close (esc)', {
             fontSize: '20px',
             fill: '#fff'
         }).setInteractive();
