@@ -11,6 +11,7 @@ let health = 10;
 let hearts = [];
 let points = 0;
 let pointsText;
+let kunaiSpeed = 350;
 let lastSlashTime = 0; // To track slash cooldown
 const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
 let gameOver = false;
@@ -125,6 +126,7 @@ class GameScene extends Phaser.Scene {
         this.load.audio('backgroundMusic', 'assets/background.mp3');
         this.load.image('shop', 'assets/shop.png');
         this.load.image('gamebg', 'assets/gamebg.jpg');
+        this.load.image('kunai', 'assets/kunai3.png');
         this.load.spritesheet('bat', 'assets/32x32-bat-sprite.png', { frameWidth: 32, frameHeight: 32 });
     }
 
@@ -191,19 +193,10 @@ class GameScene extends Phaser.Scene {
         keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-        slash = this.add.graphics();
-        this.drawSlash();
-        slash.setVisible(false);
-
         // Create enemies group
         enemies = this.physics.add.group();
         this.physics.add.collider(enemies, platforms);
         this.physics.add.collider(enemies, player, this.hitPlayer, null, this);
-
-        // Enable physics on the slash for collision detection
-        this.physics.add.existing(slash);
-        slash.body.setCircle(60); // Increase the collision radius
-        slash.body.setEnable(false); // Initially disable collision detection for the slash
 
         // Create hearts
         this.createHearts();
@@ -219,6 +212,11 @@ class GameScene extends Phaser.Scene {
         });
 
         this.createPopup();
+
+        this.projectiles = this.physics.add.group({
+            defaultKey: 'kunai',
+            maxSize: 10
+        });
     }
 
     update(time) {
@@ -238,41 +236,14 @@ class GameScene extends Phaser.Scene {
             player.anims.play('turn');
         }
 
-        if ((cursors.up.isDown || keyW.isDown) && player.body.touching.down) {
+        if ((cursors.up.isDown || keyW.isDown) && (player.body.touching.down || player.y > 750)) {
             player.setVelocityY(-330);
         }
 
         // Check for slash and cooldown
         if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
-            slash.setVisible(true);
-            slash.setPosition(player.x, player.y);
-            slash.setScale(1); // Adjust the scale as needed
-
-            let targetX = player.x;
-            if (playerDirection === 'right') {
-                targetX += 100; // Slash to the right
-                slash.scaleX = 1; // Ensure normal scale for right direction
-            } else if (playerDirection === 'left') {
-                targetX -= 100; // Slash to the left
-                slash.scaleX = -1; // Flip horizontally for left direction
-            }
-
-            // Enable collision detection for the slash
-            slash.body.setEnable(true);
-
-            // Animate the slash to glide like a real slash
-            this.tweens.add({
-                targets: slash,
-                x: targetX, // Adjust the distance as needed
-                alpha: 0,
-                duration: 200, // Duration of the animation
-                onComplete: () => {
-                    slash.setVisible(false);
-                    slash.alpha = 1; // Reset alpha for next use
-                    slash.body.setEnable(false); // Disable collision detection for the slash
-                    lastSlashTime = time; // Update last slash time
-                }
-            });
+            this.shootProjectile(player.x, player.y);
+            lastSlashTime = time; // Update last slash time
         }
 
         // Spawn enemies at intervals
@@ -287,17 +258,32 @@ class GameScene extends Phaser.Scene {
         }, this);
 
         // Check for collisions between slash and enemies
-        this.physics.overlap(slash, enemies, this.destroyEnemy, null, this);
+        this.physics.overlap(this.projectiles, enemies, this.destroyEnemy, null, this);
+
+        this.projectiles.children.iterate(function (projectile) {
+            if (projectile.active) {
+                projectile.rotation = projectile.body.velocity.x > 0 ? 0 : Math.PI;
+            }
+        });
     }
 
     drawSlash() {
-        slash.clear();
-        slash.fillStyle(0x808080, 1);
-        slash.beginPath();
-        slash.arc(0, 0, 60, Phaser.Math.DegToRad(270), Phaser.Math.DegToRad(450), false); // Increase the radius
-        slash.arc(0, 0, 50, Phaser.Math.DegToRad(450), Phaser.Math.DegToRad(270), true);
-        slash.closePath();
-        slash.fillPath();
+        // Create the texture for the black circle projectiles
+        const graphics = this.add.graphics();
+        graphics.fillStyle(0x000000, 1);
+        graphics.fillCircle(5, 5, 5);
+        graphics.generateTexture('circle', 10, 10);
+        graphics.destroy();
+    }
+
+    shootProjectile(x, y) {
+        const projectile = this.projectiles.get(x, y);
+        if (projectile) {
+            projectile.setActive(true);
+            projectile.setVisible(true);
+            projectile.body.velocity.x = playerDirection === 'right' ? kunaiSpeed : -kunaiSpeed;
+            projectile.setScale(1.75);
+        }
     }
 
     spawnEnemy() {
@@ -318,13 +304,14 @@ class GameScene extends Phaser.Scene {
 
     hitPlayer(player, enemy) {
         // Handle player being hit by an enemy
-        console.log('Player hit by enemy'); // Debug: log collision
+        console.log('Player hit by enemy', player.x, player.y); // Debug: log collision
         enemy.destroy();
         health--;
         this.removeHeart();
     }
 
     destroyEnemy(slash, enemy) {
+        slash.destroy(); // Destroy the projectile
         enemy.destroy();
         points += 10; // Increment points by 10
         pointsText.setText('Points: ' + points); // Update points text
