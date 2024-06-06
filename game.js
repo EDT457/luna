@@ -1,7 +1,7 @@
 let player;
 let backgroundMusic;
 let cursors;
-let keyA, keyD, keyW, keySpace;
+let keyA, keyD, keyW, keySpace, keyEsc;
 let slash;
 let playerDirection = 'right'; // Variable to track player direction
 let enemies;
@@ -192,6 +192,9 @@ class GameScene extends Phaser.Scene {
         keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
         keyW = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
         keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+        keyEsc = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+
+        this.escKeyPressed = false;
 
         // Create enemies group
         enemies = this.physics.add.group();
@@ -244,6 +247,13 @@ class GameScene extends Phaser.Scene {
         if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
             this.shootProjectile(player.x, player.y);
             lastSlashTime = time; // Update last slash time
+        }
+
+        if (keyEsc.isDown && !this.escKeyPressed) {
+            this.togglePopup();
+            this.escKeyPressed = true;
+        } else if (keyEsc.isUp) {
+            this.escKeyPressed = false;
         }
 
         // Spawn enemies at intervals
@@ -339,12 +349,20 @@ class GameScene extends Phaser.Scene {
 
     createPopup() {
         this.popup = this.add.container(400, 300).setVisible(false);
-
+    
         const popupBg = this.add.graphics();
         popupBg.fillStyle(0x000000, 0.8);
-        popupBg.fillRect(-100, -50, 200, 100);
-
-        const closeButton = this.add.text(0, 0, 'Close', {
+        popupBg.fillRect(-150, -100, 300, 200);
+    
+        const closeButtonBg = this.add.graphics();
+        closeButtonBg.fillStyle(0xff0000, 1); // Red background for close button
+        closeButtonBg.fillRect(-50, -60, 100, 40);
+    
+        const increaseSpeedButtonBg = this.add.graphics();
+        increaseSpeedButtonBg.fillStyle(0x00ff00, 1); // Green background for increase speed button
+        increaseSpeedButtonBg.fillRect(-125, 20, 250, 40);
+    
+        const closeButton = this.add.text(0, -40, 'Close', {
             fontSize: '20px',
             fill: '#fff'
         }).setInteractive();
@@ -352,9 +370,24 @@ class GameScene extends Phaser.Scene {
         closeButton.on('pointerdown', () => {
             this.togglePopup();
         });
-
-        this.popup.add([popupBg, closeButton]);
+    
+        const increaseSpeedButton = this.add.text(0, 40, 'Increase Speed (-50 points)', {
+            fontSize: '15px',
+            fill: '#000'
+        }).setInteractive();
+        increaseSpeedButton.setOrigin(0.5);
+        increaseSpeedButton.on('pointerdown', () => {
+            if (points >= 50) {
+                points -= 50;
+                kunaiSpeed += 100;
+                pointsText.setText('Points: ' + points);
+            }
+        });
+    
+        this.popup.add([popupBg, closeButtonBg, increaseSpeedButtonBg, closeButton, increaseSpeedButton]);
     }
+    
+    
 
     togglePopup() {
         this.popup.setVisible(!this.popup.visible);
