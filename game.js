@@ -15,6 +15,7 @@ let kunaiSpeed = 350;
 let lastSlashTime = 0; // To track slash cooldown
 const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
 let gameOver = false;
+let shootBothDirections = false; // New variable to track the upgrade
 
 class MenuScene extends Phaser.Scene {
     constructor() {
@@ -220,6 +221,9 @@ class GameScene extends Phaser.Scene {
             defaultKey: 'kunai',
             maxSize: 10
         });
+
+        // Initially disable collisions between projectiles and platforms
+        this.physics.add.collider(this.projectiles, platforms, this.returnProjectileToPool, null, this);
     }
 
     update(time) {
@@ -245,7 +249,12 @@ class GameScene extends Phaser.Scene {
 
         // Check for slash and cooldown
         if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
-            this.shootProjectile(player.x, player.y);
+            if (shootBothDirections) {
+                this.shootProjectile(player.x, player.y, 'left');
+                this.shootProjectile(player.x, player.y, 'right');
+            } else {
+                this.shootProjectile(player.x, player.y);
+            }
             lastSlashTime = time; // Update last slash time
         }
 
@@ -273,8 +282,11 @@ class GameScene extends Phaser.Scene {
         this.projectiles.children.iterate(function (projectile) {
             if (projectile.active) {
                 projectile.rotation = projectile.body.velocity.x > 0 ? 0 : Math.PI;
+                if (projectile.x < 0 || projectile.x > 800) {
+                    this.returnProjectileToPool(projectile);
+                }
             }
-        });
+        }, this);
     }
 
     drawSlash() {
@@ -286,14 +298,28 @@ class GameScene extends Phaser.Scene {
         graphics.destroy();
     }
 
-    shootProjectile(x, y) {
+    shootProjectile(x, y, direction = playerDirection) {
         const projectile = this.projectiles.get(x, y);
         if (projectile) {
             projectile.setActive(true);
             projectile.setVisible(true);
-            projectile.body.velocity.x = playerDirection === 'right' ? kunaiSpeed : -kunaiSpeed;
+            projectile.body.velocity.x = direction === 'right' ? kunaiSpeed : -kunaiSpeed;
             projectile.setScale(1.75);
+            console.log(`Shooting kunai ${direction} at speed ${kunaiSpeed}`); // Debugging line
+
+            // Temporarily disable collision with platforms
+            projectile.body.enable = false;
+            projectile.body.enable = true;
+        } else {
+            console.log('No available kunai'); // Debugging line
         }
+    }
+
+    returnProjectileToPool(projectile) {
+        projectile.setActive(false);
+        projectile.setVisible(false);
+        projectile.body.velocity.x = 0;
+        this.projectiles.killAndHide(projectile);
     }
 
     spawnEnemy() {
@@ -361,6 +387,14 @@ class GameScene extends Phaser.Scene {
         const increaseSpeedButtonBg = this.add.graphics();
         increaseSpeedButtonBg.fillStyle(0x00ff00, 1); // Green background for increase speed button
         increaseSpeedButtonBg.fillRect(-125, 20, 250, 40);
+
+        const buyHeartButtonBg = this.add.graphics();
+        buyHeartButtonBg.fillStyle(0x0000ff, 1); // Blue background for buy heart button
+        buyHeartButtonBg.fillRect(-125, 80, 250, 40);
+
+        const shootBothDirectionsButtonBg = this.add.graphics();
+        shootBothDirectionsButtonBg.fillStyle(0xffa500, 1); // Orange background for shoot both directions button
+        shootBothDirectionsButtonBg.fillRect(-125, 140, 250, 40);
     
         const closeButton = this.add.text(0, -40, 'Close (esc)', {
             fontSize: '20px',
@@ -383,14 +417,46 @@ class GameScene extends Phaser.Scene {
                 pointsText.setText('Points: ' + points);
             }
         });
+
+        const buyHeartButton = this.add.text(0, 100, 'Buy Heart (-100 points)', {
+            fontSize: '15px',
+            fill: '#000'
+        }).setInteractive();
+        buyHeartButton.setOrigin(0.5);
+        buyHeartButton.on('pointerdown', () => {
+            if (points >= 100) {
+                points -= 100;
+                this.addHeart();
+                pointsText.setText('Points: ' + points);
+            }
+        });
+
+        const shootBothDirectionsButton = this.add.text(0, 160, 'Shoot Both Directions (-500 points)', {
+            fontSize: '15px',
+            fill: '#000'
+        }).setInteractive();
+        shootBothDirectionsButton.setOrigin(0.5);
+        shootBothDirectionsButton.on('pointerdown', () => {
+            if (points >= 500) {
+                points -= 500;
+                shootBothDirections = true;
+                pointsText.setText('Points: ' + points);
+            }
+        });
     
-        this.popup.add([popupBg, closeButtonBg, increaseSpeedButtonBg, closeButton, increaseSpeedButton]);
+        this.popup.add([popupBg, closeButtonBg, increaseSpeedButtonBg, buyHeartButtonBg, shootBothDirectionsButtonBg, closeButton, increaseSpeedButton, buyHeartButton, shootBothDirectionsButton]);
     }
     
-    
-
     togglePopup() {
         this.popup.setVisible(!this.popup.visible);
+    }
+
+    addHeart() {
+        if (hearts.length < 10) {
+            let heart = this.add.image(30 + hearts.length * 40, 30, 'heart');
+            heart.setScale(2);
+            hearts.push(heart);
+        }
     }
 }
 
