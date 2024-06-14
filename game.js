@@ -6,7 +6,9 @@ let slash;
 let playerDirection = 'right'; // Variable to track player direction
 let enemies;
 let lastEnemyTime = 0;
+let lastBirdTime = 0;
 let enemySpawnInterval = 2000; // 2 seconds
+let birdSpawnInterval = 5000;
 let health = 10;
 let hearts = [];
 let points = 0;
@@ -76,6 +78,42 @@ class MenuScene extends Phaser.Scene {
 
 }
 
+class GameOverScene extends Phaser.Scene {
+    constructor() {
+        super({ key: 'GameOverScene' });
+    }
+
+    create() {
+        const bg = this.add.image(400, 300, 'menuBackground').setOrigin(0.5, 0.5);
+        bg.displayWidth = 800;
+        bg.displayHeight = 1000;
+
+        const gameOverText = this.add.text(400, 200, 'Game Over', {
+            fontSize: '48px',
+            fill: '#fff'
+        });
+        gameOverText.setOrigin(0.5);
+
+        const playAgainButton = this.add.text(400, 400, 'Play Again', {
+            fontSize: '32px',
+            fill: '#fff'
+        }).setInteractive();
+        playAgainButton.setOrigin(0.5);
+
+        playAgainButton.on('pointerdown', () => {
+            this.scene.start('GameScene');
+        });
+
+        playAgainButton.on('pointerover', () => {
+            playAgainButton.setStyle({ fill: '#ff0' });
+        });
+
+        playAgainButton.on('pointerout', () => {
+            playAgainButton.setStyle({ fill: '#fff' });
+        });
+    }
+}
+
 class CreditsScene extends Phaser.Scene {
     constructor() {
         super({ key: 'CreditsScene' });
@@ -129,6 +167,7 @@ class GameScene extends Phaser.Scene {
         this.load.image('gamebg', 'assets/gamebg.jpg');
         this.load.image('kunai', 'assets/kunai3.png');
         this.load.spritesheet('bat', 'assets/32x32-bat-sprite.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('bird', 'assets/bird.jpg', { frameWidth: 129, frameHeight: 250 });
     }
 
     create() {
@@ -188,6 +227,13 @@ class GameScene extends Phaser.Scene {
             repeat: -1
         });
 
+        this.anims.create({
+            key: 'birdFly',
+            frames: this.anims.generateFrameNumbers('bird', { start: 0, end: 13 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
         cursors = this.input.keyboard.createCursorKeys();
         keyA = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         keyD = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
@@ -201,6 +247,9 @@ class GameScene extends Phaser.Scene {
         enemies = this.physics.add.group();
         this.physics.add.collider(enemies, platforms);
         this.physics.add.collider(enemies, player, this.hitPlayer, null, this);
+
+        this.birds = this.physics.add.group();
+        this.physics.add.collider(this.birds, player, this.hitPlayer, null, this);
 
         // Create hearts
         this.createHearts();
@@ -224,6 +273,14 @@ class GameScene extends Phaser.Scene {
 
         // Initially disable collisions between projectiles and platforms
         this.physics.add.collider(this.projectiles, platforms, this.returnProjectileToPool, null, this);
+
+        // Spawn bird enemies at intervals
+        /*this.time.addEvent({
+            delay: 3000, // Spawn a bird every 3 seconds
+            callback: this.spawnBird,
+            callbackScope: this,
+            loop: true
+        });*/
     }
 
     update(time) {
@@ -267,7 +324,7 @@ class GameScene extends Phaser.Scene {
 
         // Spawn enemies at intervals
         if (time > lastEnemyTime + enemySpawnInterval) {
-            this.spawnEnemy(); // Ensure the correct context for `this`
+            this.spawnEnemy();
             lastEnemyTime = time;
         }
 
@@ -287,6 +344,12 @@ class GameScene extends Phaser.Scene {
                 }
             }
         }, this);
+
+        this.birds.children.iterate(function (bird) {
+            if (bird.x < 0 || bird.x > 800) {
+                bird.setVelocityX(bird.body.velocity.x * -1);
+            }
+        });
     }
 
     drawSlash() {
@@ -338,12 +401,31 @@ class GameScene extends Phaser.Scene {
         console.log('Enemy created at:', x, y); // Debug: log enemy position
     }
 
+    spawnBird() {
+        const x = Phaser.Math.Between(0, 800); // Random x position
+        const y = Phaser.Math.Between(50, 550); // Random y position within game frame
+        const bird = this.physics.add.sprite(x, y, 'bird'); // Create a bird sprite
+        bird.body.allowGravity = false; // Disable gravity for the bird
+        bird.setVelocityX(Phaser.Math.Between(100, 200) * (Phaser.Math.Between(0, 1) ? 1 : -1)); // Random horizontal speed and direction
+        bird.setCollideWorldBounds(true);
+        bird.body.onWorldBounds = true;
+        bird.setBounce(1);
+        bird.anims.play('birdFly'); // Play the flying animation
+        this.birds.add(bird);
+    }
+
     hitPlayer(player, enemy) {
         // Handle player being hit by an enemy
         console.log('Player hit by enemy', player.x, player.y); // Debug: log collision
         enemy.destroy();
         health--;
         this.removeHeart();
+        if (health <= 0) {
+            this.scene.start('GameOverScene'); // Switch to Game Over scene when health is 0
+            health = 10;
+            points = 0;
+            kunaiSpeed = 350;
+        }
     }
 
     destroyEnemy(slash, enemy) {
@@ -365,11 +447,6 @@ class GameScene extends Phaser.Scene {
         if (hearts.length > 0) {
             const heart = hearts.pop();
             heart.destroy();
-            if (hearts.length === 0) {
-                player.setTexture('dead');
-                player.setVelocity(0);
-                gameOver = true;
-            }
         }
     }
 
@@ -472,7 +549,7 @@ const config = {
             debug: false
         }
     },
-    scene: [MenuScene, GameScene, CreditsScene]
+    scene: [MenuScene, GameScene, CreditsScene, GameOverScene]
 };
 
 const game = new Phaser.Game(config);
