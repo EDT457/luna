@@ -455,7 +455,7 @@ class GameScene extends Phaser.Scene {
     
         const popupBg = this.add.graphics();
         popupBg.fillStyle(0x000000, 0.8);
-        popupBg.fillRect(-150, -100, 300, 200);
+        popupBg.fillRect(-200, -100, 400, 350);
     
         const closeButtonBg = this.add.graphics();
         closeButtonBg.fillStyle(0xff0000, 1); // Red background for close button
@@ -466,12 +466,12 @@ class GameScene extends Phaser.Scene {
         increaseSpeedButtonBg.fillRect(-125, 20, 250, 40);
 
         const buyHeartButtonBg = this.add.graphics();
-        buyHeartButtonBg.fillStyle(0x0000ff, 1); // Blue background for buy heart button
+        buyHeartButtonBg.fillStyle(0x00E6FF, 1); // Blue background for buy heart button
         buyHeartButtonBg.fillRect(-125, 80, 250, 40);
 
         const shootBothDirectionsButtonBg = this.add.graphics();
         shootBothDirectionsButtonBg.fillStyle(0xffa500, 1); // Orange background for shoot both directions button
-        shootBothDirectionsButtonBg.fillRect(-125, 140, 250, 40);
+        shootBothDirectionsButtonBg.fillRect(-175, 140, 350, 40);
     
         const closeButton = this.add.text(0, -40, 'Close (esc)', {
             fontSize: '20px',
@@ -501,7 +501,7 @@ class GameScene extends Phaser.Scene {
         }).setInteractive();
         buyHeartButton.setOrigin(0.5);
         buyHeartButton.on('pointerdown', () => {
-            if (points >= 100) {
+            if (points >= 100 & hearts.length < 10) {
                 points -= 100;
                 this.addHeart();
                 pointsText.setText('Points: ' + points);
