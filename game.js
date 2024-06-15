@@ -130,7 +130,19 @@ class CreditsScene extends Phaser.Scene {
         });
         title.setOrigin(0.5);
 
-        const MenuButton = this.add.text(400, 300, 'Menu', {
+        const text = this.add.text(250, 300, 'music - pixabay.com', {
+            fontSize: '24px',
+            fill: '#fff'
+        });
+        title.setOrigin(0.5);
+
+        const text2 = this.add.text(200, 400, 'animations - opengameart.org', {
+            fontSize: '24px',
+            fill: '#fff'
+        });
+        title.setOrigin(0.5);
+
+        const MenuButton = this.add.text(400, 500, 'Menu', {
             fontSize: '32px',
             fill: '#fff'
         }).setInteractive();
