@@ -3,21 +3,21 @@ let backgroundMusic;
 let cursors;
 let keyA, keyD, keyW, keySpace, keyEsc;
 let slash;
-let playerDirection = 'right'; // Variable to track player direction
+let playerDirection = 'right';
 let enemies;
 let lastEnemyTime = 0;
 let lastBirdTime = 0;
-let enemySpawnInterval = 2000; // 2 seconds
+let enemySpawnInterval = 2000;
 let birdSpawnInterval = 5000;
 let health = 10;
 let hearts = [];
 let points = 0;
 let pointsText;
 let kunaiSpeed = 350;
-let lastSlashTime = 0; // To track slash cooldown
-const slashCooldown = 750; // 0.75 seconds cooldown in milliseconds
+let lastSlashTime = 0;
+const slashCooldown = 750;
 let gameOver = false;
-let shootBothDirections = false; // New variable to track the upgrade
+let shootBothDirections = false; 
 
 class MenuScene extends Phaser.Scene {
     constructor() {
@@ -271,30 +271,21 @@ class GameScene extends Phaser.Scene {
             maxSize: 10
         });
 
-        // Initially disable collisions between projectiles and platforms
         this.physics.add.collider(this.projectiles, platforms, this.returnProjectileToPool, null, this);
-
-        // Spawn bird enemies at intervals
-        /*this.time.addEvent({
-            delay: 3000, // Spawn a bird every 3 seconds
-            callback: this.spawnBird,
-            callbackScope: this,
-            loop: true
-        });*/
     }
 
     update(time) {
-        if (gameOver) return; // Stop updating if game is over
+        if (gameOver) return; 
         if (cursors.left.isDown || keyA.isDown) {
             player.setVelocityX(-160);
             player.anims.play('left', true);
             player.flipX = true;
-            playerDirection = 'left'; // Update direction
+            playerDirection = 'left';
         } else if (cursors.right.isDown || keyD.isDown) {
             player.setVelocityX(160);
             player.anims.play('right', true);
             player.flipX = false;
-            playerDirection = 'right'; // Update direction
+            playerDirection = 'right'; 
         } else {
             player.setVelocityX(0);
             player.anims.play('turn');
@@ -304,7 +295,6 @@ class GameScene extends Phaser.Scene {
             player.setVelocityY(-330);
         }
 
-        // Check for slash and cooldown
         if (keySpace.isDown && time > lastSlashTime + slashCooldown) {
             if (shootBothDirections) {
                 this.shootProjectile(player.x, player.y, 'left');
@@ -312,7 +302,7 @@ class GameScene extends Phaser.Scene {
             } else {
                 this.shootProjectile(player.x, player.y);
             }
-            lastSlashTime = time; // Update last slash time
+            lastSlashTime = time; 
         }
 
         if (keyEsc.isDown && !this.escKeyPressed) {
@@ -322,18 +312,15 @@ class GameScene extends Phaser.Scene {
             this.escKeyPressed = false;
         }
 
-        // Spawn enemies at intervals
         if (time > lastEnemyTime + enemySpawnInterval) {
             this.spawnEnemy();
             lastEnemyTime = time;
         }
 
-        // Update enemies to move towards the player
         enemies.children.iterate(function (enemy) {
             this.physics.moveToObject(enemy, player, 100);
         }, this);
 
-        // Check for collisions between slash and enemies
         this.physics.overlap(this.projectiles, enemies, this.destroyEnemy, null, this);
 
         this.projectiles.children.iterate(function (projectile) {
@@ -353,7 +340,6 @@ class GameScene extends Phaser.Scene {
     }
 
     drawSlash() {
-        // Create the texture for the black circle projectiles
         const graphics = this.add.graphics();
         graphics.fillStyle(0x000000, 1);
         graphics.fillCircle(5, 5, 5);
@@ -368,13 +354,12 @@ class GameScene extends Phaser.Scene {
             projectile.setVisible(true);
             projectile.body.velocity.x = direction === 'right' ? kunaiSpeed : -kunaiSpeed;
             projectile.setScale(1.75);
-            console.log(`Shooting kunai ${direction} at speed ${kunaiSpeed}`); // Debugging line
+            console.log(`Shooting kunai ${direction} at speed ${kunaiSpeed}`);
 
-            // Temporarily disable collision with platforms
             projectile.body.enable = false;
             projectile.body.enable = true;
         } else {
-            console.log('No available kunai'); // Debugging line
+            console.log('No available kunai'); 
         }
     }
 
@@ -386,42 +371,41 @@ class GameScene extends Phaser.Scene {
     }
 
     spawnEnemy() {
-        console.log('Spawning enemy'); // Debug: log spawning
-        const side = Phaser.Math.Between(0, 1); // Randomly choose 0 (left) or 1 (right)
-        const x = side === 0 ? 0 : 800; // Spawn at left or right side
-        const y = Phaser.Math.Between(0, 600); // Random y position
-        const enemy = this.physics.add.sprite(x, y, 'bat'); // Create an enemy sprite
-        enemy.setCircle(16); // Set the collision size to match the original circles
+        console.log('Spawning enemy'); 
+        const side = Phaser.Math.Between(0, 1);
+        const x = side === 0 ? 0 : 800; 
+        const y = Phaser.Math.Between(0, 600);
+        const enemy = this.physics.add.sprite(x, y, 'bat'); 
+        enemy.setCircle(16);
         enemy.setBounce(1);
         enemy.setCollideWorldBounds(true);
-        enemy.setVelocityX(side === 0 ? 100 : -100); // Move towards the player
-        enemy.setVelocityY(Phaser.Math.Between(-50, 50)); // Random vertical velocity
-        enemy.anims.play('fly'); // Play the flying animation
+        enemy.setVelocityX(side === 0 ? 100 : -100);
+        enemy.setVelocityY(Phaser.Math.Between(-50, 50)); 
+        enemy.anims.play('fly'); 
         enemies.add(enemy);
-        console.log('Enemy created at:', x, y); // Debug: log enemy position
+        console.log('Enemy created at:', x, y); 
     }
 
     spawnBird() {
-        const x = Phaser.Math.Between(0, 800); // Random x position
-        const y = Phaser.Math.Between(50, 550); // Random y position within game frame
-        const bird = this.physics.add.sprite(x, y, 'bird'); // Create a bird sprite
-        bird.body.allowGravity = false; // Disable gravity for the bird
-        bird.setVelocityX(Phaser.Math.Between(100, 200) * (Phaser.Math.Between(0, 1) ? 1 : -1)); // Random horizontal speed and direction
+        const x = Phaser.Math.Between(0, 800); 
+        const y = Phaser.Math.Between(50, 550); 
+        const bird = this.physics.add.sprite(x, y, 'bird'); 
+        bird.body.allowGravity = false;
+        bird.setVelocityX(Phaser.Math.Between(100, 200) * (Phaser.Math.Between(0, 1) ? 1 : -1)); 
         bird.setCollideWorldBounds(true);
         bird.body.onWorldBounds = true;
         bird.setBounce(1);
-        bird.anims.play('birdFly'); // Play the flying animation
+        bird.anims.play('birdFly'); 
         this.birds.add(bird);
     }
 
     hitPlayer(player, enemy) {
-        // Handle player being hit by an enemy
-        console.log('Player hit by enemy', player.x, player.y); // Debug: log collision
+        console.log('Player hit by enemy', player.x, player.y);
         enemy.destroy();
         health--;
         this.removeHeart();
         if (health <= 0) {
-            this.scene.start('GameOverScene'); // Switch to Game Over scene when health is 0
+            this.scene.start('GameOverScene');
             health = 10;
             points = 0;
             kunaiSpeed = 350;
@@ -429,10 +413,10 @@ class GameScene extends Phaser.Scene {
     }
 
     destroyEnemy(slash, enemy) {
-        slash.destroy(); // Destroy the projectile
+        slash.destroy(); 
         enemy.destroy();
-        points += 10; // Increment points by 10
-        pointsText.setText('Points: ' + points); // Update points text
+        points += 10; 
+        pointsText.setText('Points: ' + points); 
     }
 
     createHearts() {
@@ -458,19 +442,19 @@ class GameScene extends Phaser.Scene {
         popupBg.fillRect(-200, -100, 400, 350);
     
         const closeButtonBg = this.add.graphics();
-        closeButtonBg.fillStyle(0xff0000, 1); // Red background for close button
+        closeButtonBg.fillStyle(0xff0000, 1);
         closeButtonBg.fillRect(-85, -60, 175, 40);
     
         const increaseSpeedButtonBg = this.add.graphics();
-        increaseSpeedButtonBg.fillStyle(0x00ff00, 1); // Green background for increase speed button
+        increaseSpeedButtonBg.fillStyle(0x00ff00, 1);
         increaseSpeedButtonBg.fillRect(-125, 20, 250, 40);
 
         const buyHeartButtonBg = this.add.graphics();
-        buyHeartButtonBg.fillStyle(0x00E6FF, 1); // Blue background for buy heart button
+        buyHeartButtonBg.fillStyle(0x00E6FF, 1); 
         buyHeartButtonBg.fillRect(-125, 80, 250, 40);
 
         const shootBothDirectionsButtonBg = this.add.graphics();
-        shootBothDirectionsButtonBg.fillStyle(0xffa500, 1); // Orange background for shoot both directions button
+        shootBothDirectionsButtonBg.fillStyle(0xffa500, 1);
         shootBothDirectionsButtonBg.fillRect(-175, 140, 350, 40);
     
         const closeButton = this.add.text(0, -40, 'Close (esc)', {
